@@ -86,7 +86,7 @@ Try help(fields) to get started.
 > 
 > load(paste("forecast2022_",sites[j],".rdat",sep=""))
 > cat("working on site",sites[j],"\n")
-working on site Donner Pass 
+working on site Washington 
 > sub_dat<-dat[dat$site_name==sites[j],]
 > sub_ndat<-ndat[ndat$site_name==sites[j],]
 > spKeep<-names(which(tapply(sub_dat$pa,INDEX=sub_dat$genus_species,sum) > 10))
@@ -123,8 +123,9 @@ working on site Donner Pass
 > 
 > 
 > ## plots of posteriors
-> ppA<-extract(fit,par="pp")[[1]]>> ppB<-extract(fit,par="beta")[[1]]
-> nppA<-extract(fit,par="ppNew")[[1]]>> med<-apply(ppB,c(2,3),median)
+> ppA<-extract(fit,par="pp")[[1]]
+>> ppB<-extract(fit,par="beta")[[1]]
+> nppA<-extract(fit,par="ppNew")[[1]]> med<-apply(ppB,c(2,3),median)
 > lb<-apply(ppB,c(2,3),quantile,probs=0.05)
 > ub<-apply(ppB,c(2,3),quantile,probs=0.95)
 > brks<-quantile(bb[,4],probs=seq(0,1,1/18))
@@ -137,7 +138,8 @@ working on site Donner Pass
 > pdf(paste("bayHglm_2022_fit_",sites[j],".pdf",sep=""),width=9,height=12)
 > par(mfrow=c(4,3))
 > par(mar=c(4.5,5.5,2.5,1.5))
-> med_PA<-apply(ppA,2,median)>> for(i in 1:length(sp)){
+> med_PA<-apply(ppA,2,median)
+> for(i in 1:length(sp)){
 +         a<-which(spid==i)
 +        	plot(bbi[a,5],med_PA[a],pch=19,xlab="Day",ylab="Prob. present",col=alpha(css[a],0.9),cex.lab=1.4)
 + 	        title(main=sp[i],cex.main=1.4)
@@ -167,7 +169,8 @@ null device
 > for(i in 1:8000){ ## 8000 HMC samples
 + 	sam_PA<-rbinom(n=length(med_PA),size=1,nppA[i,])
 + 	null_PA[,i]<-tapply(X=sam_PA,INDEX=odd,sum)
-+ }>> lb<-apply(null_PA,1,quantile,probs=0.05)
++ }
+> lb<-apply(null_PA,1,quantile,probs=0.05)
 > ub<-apply(null_PA,1,quantile,probs=0.95)
 > 
 > pdf(paste("bayHglm_2022_forecast_spec_",sites[j],".pdf",sep=""),width=4.5,height=4.5)
@@ -185,12 +188,12 @@ null device
 +         ppM[i,]<-med_PA[a][order(od[a])]
 + }
 > colTab<-rev(heat.colors(10))
-> pdf(paste("bayHglm_2022_forecast_all_",sites[j],".pdf",sep=""),width=6,height=4.5)
-> par(mar=c(4.5,4.5,.5,.5))
+> pdf(paste("bayHglm_2022_forecast_all_",sites[j],".pdf",sep=""),width=6,height=18)
+> par(mar=c(4.5,9,.5,.5))
 > image.plot(t(ppM[rev(order(apply(ppM,1,which.max))),]),xlab="Date",ylab="",axes=FALSE,cex.lab=1.2,col=colTab)
-> axis(2,at=((1:nSp)-1)/nSp,sp[rev(order(apply(ppM,1,which.max)))],las=2,cex.axis=.2)
+> axis(2,at=(1:nSp-1)/(nSp-1),sp[rev(order(apply(ppM,1,which.max)))],las=2,cex.axis=.7)
 > sdy<-seq(1,nD,7)
-> axis(1,at=sdy/nD,sort(unique(format(odd,format="%m-%d")))[sdy],las=2,cex.axis=.7)
+> axis(1,at=sdy/(nD-1),sort(unique(format(odd,format="%m-%d")))[sdy],las=2,cex.axis=.7)
 > box()
 > dev.off()
 null device 
@@ -230,5 +233,5 @@ null device
 > 
 > proc.time()
    user  system elapsed 
-525.798  30.963 559.577 
- 
+505.089  39.228 546.432 
+6 

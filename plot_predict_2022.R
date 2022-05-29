@@ -129,12 +129,12 @@ for(i in 1:nSp){
         ppM[i,]<-med_PA[a][order(od[a])]
 }
 colTab<-rev(heat.colors(10))
-pdf(paste("bayHglm_2022_forecast_all_",sites[j],".pdf",sep=""),width=6,height=4.5)
-par(mar=c(4.5,4.5,.5,.5))
+pdf(paste("bayHglm_2022_forecast_all_",sites[j],".pdf",sep=""),width=6,height=18)
+par(mar=c(4.5,9,.5,.5))
 image.plot(t(ppM[rev(order(apply(ppM,1,which.max))),]),xlab="Date",ylab="",axes=FALSE,cex.lab=1.2,col=colTab)
-axis(2,at=((1:nSp)-1)/nSp,sp[rev(order(apply(ppM,1,which.max)))],las=2,cex.axis=.2)
+axis(2,at=(1:nSp-1)/(nSp-1),sp[rev(order(apply(ppM,1,which.max)))],las=2,cex.axis=.7)
 sdy<-seq(1,nD,7)
-axis(1,at=sdy/nD,sort(unique(format(odd,format="%m-%d")))[sdy],las=2,cex.axis=.7)
+axis(1,at=sdy/(nD-1),sort(unique(format(odd,format="%m-%d")))[sdy],las=2,cex.axis=.7)
 box()
 dev.off()
 
