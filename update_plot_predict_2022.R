@@ -21,9 +21,16 @@ standNew<-function(x=NA,newx){
 ## read in the data
 dat<-read.csv("foristerCastData2022.csv")
 ndat<-read.csv("foristerCastData2022_April.csv")
+obs<-read.csv("MtnsEntry_2022_butterflies.csv")
+keep<-which(is.na(obs$genus_species)==FALSE)
+obs<-obs[keep,]
 
 
-#  Castle Peak   Donner Pass Lang Crossing Sierra Valley    Washington 
+mkDates<-as.Date(rep(NA,dim(obs)[1]))
+for(k in 1:length(mkDates)){
+	mkDates[k]<-as.Date(paste(obs[k,1],obs[k,2],obs[k,3],sep=""),"%d%b%Y")
+}
+	#  Castle Peak   Donner Pass Lang Crossing Sierra Valley    Washington 
 #        41890        103477        102832        101514        108523
 
 sites<-unique(dat$site_name)
@@ -81,31 +88,10 @@ for(i in 2:18){
         css[bb[,4] > brks[i]]<-cs[i]
 }
 
-pdf(paste("bayHglm_2022_fit_",sites[j],".pdf",sep=""),width=9,height=12)
-par(mfrow=c(4,3))
-par(mar=c(4.5,5.5,2.5,1.5))
-med_PA<-apply(ppA,2,median)
-for(i in 1:length(sp)){
-        a<-which(spid==i)
-       	plot(bbi[a,5],med_PA[a],pch=19,xlab="Day",ylab="Prob. present",col=alpha(css[a],0.9),cex.lab=1.4)
-	        title(main=sp[i],cex.main=1.4)
-}
-dev.off()
-	
-pdf(paste("bayHglm_2022_forecast_",sites[j],".pdf",sep=""),width=9,height=12)
-par(mfrow=c(4,3))
-par(mar=c(4.5,5.5,2.5,1.5))
+#med_PA<-apply(ppA,2,median)
 med_PA<-apply(nppA,2,median)
 lb_PA<-apply(nppA,2,quantile,probs=0.05)
 ub_PA<-apply(nppA,2,quantile,probs=0.95)
-for(i in 1:length(sp)){
-        a<-which(nspid==i)
-       	plot(od[a],med_PA[a],pch=19,xlab="Day",ylab="Prob. present",col=alpha("darkgray",0.9),ylim=c(0,1),cex.lab=1.4,type='n')
-	polygon(c(od[a],rev(od[a])),c(lb_PA[a],rev(ub_PA[a])),col=alpha("darkgray",.4),border=NA)
-	lines(od[a],med_PA[a],col=alpha("darkgray",0.9),lwd=1.8)
-        title(main=sp[i],cex.main=1.4)
-}
-dev.off()
 
 null_PA<-matrix(NA,nrow=length(unique(odd)),ncol=8000)
 for(i in 1:8000){ ## 8000 HMC samples
@@ -115,18 +101,25 @@ for(i in 1:8000){ ## 8000 HMC samples
 lb<-apply(null_PA,1,quantile,probs=0.05)
 ub<-apply(null_PA,1,quantile,probs=0.95)
 
+## add obs
+ocnts<-table(mkDates[which(obs$site_name==sites[j])])
+
 pdf(paste("bayHglm_2022_forecast_spec_",sites[j],".pdf",sep=""),width=4.5,height=4.5)
 par(mar=c(4.5,4.5,.5,.5))
 plot(sort(unique(odd)),tapply(X=med_PA,INDEX=odd,sum),type='n',xlab="Date",ylab="Number of species",col=alpha("darkgray",0.9),cex.lab=1.2,ylim=c(0,1.02*max(ub)))
 polygon(c(sort(unique(odd)),rev(sort(unique(odd)))),c(lb,rev(ub)),col=alpha("darkgray",.4),border=NA)
 lines(sort(unique(odd)),tapply(X=med_PA,INDEX=odd,sum),lwd=1.8,col=alpha("darkgray",0.9))
+points(as.Date(names(ocnts)),ocnts,pch=19)
 dev.off()
 
 ppM<-matrix(NA,nrow=nSp,ncol=nD)
+oMat<-ppM
 for(i in 1:nSp){
 	a<-which(nspid==i)
-        ppM[i,]<-med_PA[a][order(od[a])]
+       ppM[i,]<-med_PA[a][order(od[a])]
 }
+
+
 colTab<-rev(heat.colors(10))
 pdf(paste("bayHglm_2022_forecast_all_",sites[j],".pdf",sep=""),width=6,height=18)
 par(mar=c(4.5,9,.5,.5))
@@ -134,29 +127,16 @@ image.plot(t(ppM[rev(order(apply(ppM,1,which.max))),]),xlab="Date",ylab="",axes=
 axis(2,at=(1:nSp-1)/(nSp-1),sp[rev(order(apply(ppM,1,which.max)))],las=2,cex.axis=.7)
 sdy<-seq(1,nD,7)
 axis(1,at=sdy/(nD-1),sort(unique(format(odd,format="%m-%d")))[sdy],las=2,cex.axis=.7)
-box()
-dev.off()
-
-med<-apply(ppB,c(2,3),median)
-lb<-apply(ppB,c(2,3),quantile,probs=0.05)
-ub<-apply(ppB,c(2,3),quantile,probs=0.95)
-
-pdf(paste("effects_2022_",sites[j],".pdf",sep=""),width=9,height=9)
-par(mar=c(4.5,5.5,2.5,1.5))
-covnms<-c("Fall_tmn","Fall_ppt","Win_tmn","Pack","Day","Day_2","Year","Pack-Day","Pack-Day_2")
-par(mfrow=c(3,3))
-for(i in 1:9){
-  	plot(med[,i],xlab="Species",ylab="Coefficient",pch=19,col=alpha("gray20",.8),
-        ylim=c(min(lb[,i]),max(ub[,i])),cex.lab=1.4)
-	abline(h=0,lty=2)
-	segments(1:nSp,lb[,i],1:nSp,ub[,i])
-	title(covnms[i],cex.main=1.4)
+ya<-(1:nSp-1)/(nSp-1)
+xa<-(1:nD-1)/(nD-1)
+sym<-c(21,19)
+obsDays<-which(unique(odd) %in% unique(mkDates[obs$site_name==sites[j]]))
+for(i in obsDays){
+	nms<-obs$genus_species[which(mkDates==unique(odd)[i] & obs$site_name==sites[j])]
+	oMat[,i]<-0
+	oMat[which(sp %in% nms),i]<-1
+	points(rep(xa[i],nSp),ya,pch=sym[oMat[rev(order(apply(ppM,1,which.max))),i]+1],cex=.8)
 }
-dev.off()
-
-pdf(paste("hier_effects_2022_",sites[j],".pdf",sep=""),width=5,height=6)
-par(mar=c(4.5,5.5,2.5,1.5))
-plot(fit,pars="mu",cex.axis=1.2)
-plot(fit,pars="sigma",cex.axis=1.2)
+box()
 dev.off()
 
