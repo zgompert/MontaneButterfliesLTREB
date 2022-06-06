@@ -38,6 +38,9 @@ myargs<-commandArgs(trailingOnly=TRUE)
 j<-as.numeric(myargs[1])
 
 load(paste("forecast2022_",sites[j],".rdat",sep=""))
+## fix taxonomy
+dat$genus_species[which(dat$genus_species=="Colias philodice (eriphyle)")]<-"Colias philodice"
+
 cat("working on site",sites[j],"\n")
 sub_dat<-dat[dat$site_name==sites[j],]
 sub_ndat<-ndat[ndat$site_name==sites[j],]
